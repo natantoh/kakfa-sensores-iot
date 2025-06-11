@@ -66,3 +66,20 @@ ADICIONAR:
 - MONITORAMENTO
 - QT DE MSG PROCESSADA
 - TRATAMENTO DE MSG
+
+## Realizando a configuração local - Para teste sem o docker
+- Baixar e instalar o PostgreSQL https://www.postgresql.org/download/windows/
+- Configurar com a porta 5432 ( Padrão )
+- Ir na pesquisa do windows digitar psql
+  No terminal **psql**, quando ele pedir as informações, preencher:
+
+  - **Server/host:**   localhost
+  - **Database:**  iotdata
+  - **Port:**  5432
+  - **Username:**  iotuser
+  - **Password:**  iotpassword
+
+Esses dados são os mesmos que você configuramos no arquivo consumer.py. Depois de preencher, você estará conectado ao seu banco PostgreSQL local e poderá executar comandos SQL normalmente!
+
+
+
