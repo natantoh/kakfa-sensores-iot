@@ -60,3 +60,9 @@ This project demonstrates a system for monitoring IoT sensors using Kafka as a m
   - Armazenar os dados no PostgreSQL
 
 Você pode monitorar os dados através do Kafka UI em http://localhost:8080 e consultar os dados armazenados no PostgreSQL.
+
+ADICIONAR:
+- REDIS
+- MONITORAMENTO
+- QT DE MSG PROCESSADA
+- TRATAMENTO DE MSG
