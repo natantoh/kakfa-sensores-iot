@@ -1,7 +1,46 @@
 # kakfa-sensores-iot
 # IoT Sensor Monitoring with Kafka and PostgreSQL
+## Estrutura do Projeto
 
-This project demonstrates a system for monitoring IoT sensors using Kafka as a message broker and PostgreSQL for data storage.
+```
+kakfa-sensores-iot/
+│
+├── iot-kafka-monitoring/
+│   ├── docker-compose.yml
+│   ├── requirements.txt
+│   │
+│   ├── config/
+│   │   └── settings.py
+│   │
+│   ├── consumer/
+│   │   ├── consumer.py
+│   │   └── Dockerfile
+│   │
+│   ├── db/
+│   │
+│   ├── producer/
+│   │   ├── producer.py
+│   │   └── Dockerfile
+│   │
+│   └── utils/
+│       └── fake_data_sensor.py
+│
+├── .gitignore
+├── LICENSE
+└── README.md
+```
+## Descrição
+
+- **docker-compose.yml**: Orquestra todos os serviços (Kafka, Zookeeper, PostgreSQL, Producer, Consumer).
+- **requirements.txt**: Dependências Python compartilhadas por Producer e Consumer.
+- **config/**: Configurações auxiliares do projeto.
+- **consumer/**: Código e Dockerfile do consumidor Kafka (salva dados no PostgreSQL).
+- **producer/**: Código e Dockerfile do produtor Kafka (gera dados fake de sensores).
+- **db/**: (Opcional) Scripts ou arquivos relacionados ao banco de dados.
+- **utils/**: Utilitários, como gerador de dados fake para sensores.
+- **.gitignore**: Arquivos e pastas ignorados pelo Git.
+- **LICENSE**: Licença do projeto.
+- **README.md**: Documentação do projeto.
 
 ## Arquitetura
 
