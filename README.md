@@ -81,5 +81,12 @@ ADICIONAR:
 
 Esses dados são os mesmos que você configuramos no arquivo consumer.py. Depois de preencher, você estará conectado ao seu banco PostgreSQL local e poderá executar comandos SQL normalmente!
 
+## DockerFile de consumer e producer
+Foi mantido uma imagem separada para o consumer e uma para o producer, visando os seguintes benefícios futuros:
 
+- **Responsabilidade única:** Cada serviço tem sua função bem definida e pode evoluir de forma independente.
+- **Escalabilidade:** Podemos escalar o producer ou o consumer separadamente, conforme a demanda.
+- **Deploy independente:** Atualizações em um serviço não afetam o outro.
+- **Boas práticas DevOps:** Facilita CI/CD, troubleshooting e manutenção.
+- **Flexibilidade:** Permite usar dependências, variáveis de ambiente e configurações específicas para cada serviço. 
 
