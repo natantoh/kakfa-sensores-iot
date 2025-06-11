@@ -18,7 +18,7 @@ This project demonstrates a system for monitoring IoT sensors using Kafka as a m
 
 ## Running the System
 
-1. Start containers:
+1. Iniciar os containers:
    ```bash
    docker-compose up -d
    ```
@@ -27,11 +27,11 @@ This project demonstrates a system for monitoring IoT sensors using Kafka as a m
    ```bash
     python -c "from db.models import create_tables; create_tables()"
    ```
-3. Run producer:
+3. Rodar o producer:
  ```bash
     python producer/producer.py
  ```
-4. Run consumer:
+4. Rodar o onsumer:
  ```bash
    python consumer/consumer.py
  ```
