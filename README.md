@@ -3,12 +3,14 @@
 
 This project demonstrates a system for monitoring IoT sensors using Kafka as a message broker and PostgreSQL for data storage.
 
-## Architecture
+## Arquitetura
 
-1. **Producer**: Generates fake sensor data and sends to Kafka topic
+1. **Producer**: Gera dados falsos do sensor e envia para o tópico Kafka
 2. **Kafka**: Message broker for real-time data streaming
 3. **Consumer**: Processes messages from Kafka and stores in PostgreSQL
 4. **PostgreSQL**: Database for persistent storage of sensor data
+
+      [Producer] --> [Tópico Kafka] --> [Consumer] --> [Banco de Dados]
 
 ## Setup
 
