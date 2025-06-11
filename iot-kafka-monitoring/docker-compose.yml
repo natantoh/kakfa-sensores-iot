@@ -1,0 +1,78 @@
+
+
+services:                      # Início da definição dos serviços que serão executados.
+
+  zookeeper:                   # Serviço chamado "zookeeper" (necessário para o Kafka funcionar).
+    image: confluentinc/cp-zookeeper:latest   # Usa a imagem oficial do Zookeeper da Confluent.
+    environment:               # Variáveis de ambiente para configurar o Zookeeper.
+      ZOOKEEPER_CLIENT_PORT: 2181            # Porta padrão para clientes se conectarem ao Zookeeper.
+      ZOOKEEPER_TICK_TIME: 2000              # Intervalo de tempo básico do Zookeeper (em ms).
+    ports:
+      - "2181:2181"            # Mapeia a porta 2181 do container para a porta 2181 do host.
+
+  kafka:                       # Serviço chamado "kafka" (broker de mensagens).
+    image: confluentinc/cp-kafka:latest      # Usa a imagem oficial do Kafka da Confluent.
+    depends_on:                # Garante que o Zookeeper seja iniciado antes do Kafka.
+      - zookeeper
+    environment:               # Variáveis de ambiente para configurar o Kafka.
+      KAFKA_BROKER_ID: 1                       # Identificador único do broker Kafka.
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181  # Endereço do Zookeeper para o Kafka se conectar.
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9093  # Endereço pelo qual o broker será acessível.
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1           # Fator de replicação dos tópicos internos (1 para ambiente de teste).
+    ports:
+      - "9093:9093"            # Mapeia a porta 9093 do container para a porta 9093 do host.
+
+  postgres:                    # Serviço chamado "postgres" (banco de dados relacional).
+    image: postgres:13         # Usa a imagem oficial do PostgreSQL na versão 13.
+    environment:               # Variáveis de ambiente para configurar o banco.
+      POSTGRES_USER: iotuser               # Usuário padrão criado no banco.
+      POSTGRES_PASSWORD: iotpassword       # Senha do usuário padrão.
+      POSTGRES_DB: iotdata                 # Nome do banco de dados padrão criado.
+    ports:
+      - "5432:5432"            # Mapeia a porta 5432 do container para a porta 5432 do host.
+    volumes:
+      - postgres_data:/var/lib/postgresql/data   # Volume persistente para armazenar os dados do banco.
+
+  producer:                    # Serviço para o producer Python
+    build:
+      context: ./producer
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BROKER=kafka:9093
+      - TOPIC_NAME=iot-sensor-data
+    restart: unless-stopped
+
+  consumer:                    # Serviço para o consumer Python
+    build:
+      context: ./consumer
+    depends_on:
+      - kafka
+      - postgres
+    environment:
+      - KAFKA_BROKER=kafka:9093
+      - TOPIC_NAME=iot-sensor-data
+      - POSTGRES_DB=iotdata
+      - POSTGRES_USER=iotuser
+      - POSTGRES_PASSWORD=iotpassword
+      - POSTGRES_HOST=postgres
+    restart: unless-stopped
+
+volumes:                       # Definição dos volumes persistentes.
+  postgres_data:               # Volume chamado "postgres_data" para persistir dados do PostgreSQL.
+
+  # Comandos para rodar:
+  # Para rodar tudo, basta usar o comando abaixo no terminal, dentro da pasta onde está o arquivo docker-compose.yml:
+  # docker-compose up --build
+
+  # O que acontece:
+  #- O Docker vai construir as imagens do producer e consumer (se ainda não existirem).
+  #- Vai baixar as imagens do Kafka, Zookeeper e PostgreSQL.
+  #- Vai subir todos os containers e conectar os serviços automaticamente.
+
+  # Dicas:
+  # Para rodar em segundo plano (background), use:
+  # docker-compose up --build -d
+
+  # Para parar tudo depois, use:
+  # docker-compose down
