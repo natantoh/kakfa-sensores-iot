@@ -5,21 +5,9 @@ from datetime import datetime
 import logging
 import os
 
-# Configurações
-#KAFKA_BROKER = 'localhost:9093'  # Para rodar fora do Docker
 KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'kafka:9092')
 TOPIC_NAME = 'iot-sensor-data'
 GROUP_ID = 'iot-consumer-group'
-
-# Configuração do banco de dados PostgreSQL
-# DB_CONFIG = {
-#     'dbname': 'iotdata',
-#     'user': 'iotuser',
-#     'password': 'iotpassword',
-#     'host': 'localhost',
-#     'port': '5432'  # Descomentar se quiser rodar sem docker
-# }
-
 
 DB_CONFIG = {
     'dbname': os.getenv('POSTGRES_DB', 'iotdata'),
@@ -29,8 +17,6 @@ DB_CONFIG = {
     'port': '5432'
 }
 
-
-# Configuração do logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'

@@ -25,14 +25,16 @@ def create_kafka_producer():
 
 def main():
     producer = create_kafka_producer()
-    
+    count = 0
     try:
         while True:
             sensor_data = generate_sensor_data()
-            print(f"Enviando dados: {sensor_data}")
+            count += 1
+            print(f"Enviando dados #{count}: {sensor_data}")
             producer.send(TOPIC_NAME, value=sensor_data)
-            sleep(random.uniform(0.5, 2))  # Intervalo aleatório entre envios
+            sleep(random.uniform(0.5, 2))
     except KeyboardInterrupt:
+        print(f"Total de mensagens enviadas: {count}")
         print("Parando o producer...")
     finally:
         producer.flush()
