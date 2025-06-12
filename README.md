@@ -99,8 +99,7 @@ kakfa-sensores-iot/
         +------------------------+
         |     PostgreSQL         |
         |------------------------|
-        | Table: sensors         |
-        | Table: sensor_readings |
+        | Table: sensor_events   |
         +------------------------+
    
 ## Setup
@@ -157,20 +156,7 @@ ADICIONAR:
 - MONITORAMENTO
 - QT DE MSG PROCESSADA
 - TRATAMENTO DE MSG
-
-## Realizando a configuração local - Para teste sem o docker
-- Baixar e instalar o PostgreSQL https://www.postgresql.org/download/windows/
-- Configurar com a porta 5432 ( Padrão )
-- Ir na pesquisa do windows digitar psql
-  No terminal **psql**, quando ele pedir as informações, preencher:
-
-  - **Server/host:**   localhost
-  - **Database:**  iotdata
-  - **Port:**  5432
-  - **Username:**  iotuser
-  - **Password:**  iotpassword
-
-Esses dados são os mesmos que você configuramos no arquivo consumer.py. Depois de preencher, você estará conectado ao seu banco PostgreSQL local e poderá executar comandos SQL normalmente!
+- TESTE COMO PRIORIDADE
 
 ## DockerFile de consumer e producer
 Foi mantido uma imagem separada para o consumer e uma para o producer, visando os seguintes benefícios futuros:
@@ -180,4 +166,14 @@ Foi mantido uma imagem separada para o consumer e uma para o producer, visando o
 - **Deploy independente:** Atualizações em um serviço não afetam o outro.
 - **Boas práticas DevOps:** Facilita CI/CD, troubleshooting e manutenção.
 - **Flexibilidade:** Permite usar dependências, variáveis de ambiente e configurações específicas para cada serviço. 
+
+## Makefile
+No projeto, utilizamos o makefile para "dar apelidos curtos" para os comandos normalmente usados. Na pasta raíz do projeto, podemos encontrar o arquivo makefile que contém comandos normalmente utilizados neste projeto. Para utilização do makefile, primeiro precisa verificar se o mesmo está instalado, para isso podemos verificar digitando:
+
+ ```bash
+   make --version
+ ```
+
+Se aparecer a versão, o make já está disponível. Assim pode-se utilizar os comandos make apresentados o makefile do projeto.
+Caso não aparecer, precisa ser instalado. Existem várias formas na internet para instalar o makefile, mas, como não é importante para a execução do projeto, essa parte fica a critério do leitor. Podemos copiar diretamente os comandos completos do makefile e jogar no terminal, funcionando da mesma forma como se fosse pelo make.
 
