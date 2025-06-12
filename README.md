@@ -167,3 +167,16 @@ Foi mantido uma imagem separada para o consumer e uma para o producer, visando o
 - **Boas práticas DevOps:** Facilita CI/CD, troubleshooting e manutenção.
 - **Flexibilidade:** Permite usar dependências, variáveis de ambiente e configurações específicas para cada serviço. 
 
+## Makefile
+No projeto, utilizamos o makefile para "dar apelidos curtos" para os comandos normalmente usados. Na pasta raíz do projeto, podemos encontrar o arquivo makefile que contém comandos normalmente utilizados neste projeto. Para utilização do makefile, primeiro precisa verificar se o mesmo está instalado, para isso podemos verificar digitando:
+
+ ```bash
+   make --version
+ ```
+
+Se aparecer a versão, o make já está disponível. Assim pode-se utilizar os comandos make apresentados o makefile do projeto.
+Caso não aparecer, podemos instalar o make a partir do seguinte comando.
+
+ ```powershell
+   choco install make
+ ```
