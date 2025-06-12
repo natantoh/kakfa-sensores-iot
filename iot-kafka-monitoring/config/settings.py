@@ -24,7 +24,7 @@ class BaseSettings:
     # Redis
     REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
     REDIS_PORT = int(os.getenv('REDIS_PORT', '6379'))
-    REDIS_TTL_SECONDS = int(os.getenv('REDIS_TTL_SECONDS', '3600'))
+    REDIS_TTL_SECONDS = int(os.getenv('REDIS_TTL_SECONDS', '3600'))  # Adicionado para centralizar o TTL
 
 class DevSettings(BaseSettings):
     pass
