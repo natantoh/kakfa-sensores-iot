@@ -99,8 +99,7 @@ kakfa-sensores-iot/
         +------------------------+
         |     PostgreSQL         |
         |------------------------|
-        | Table: sensors         |
-        | Table: sensor_readings |
+        | Table: sensor_events   |
         +------------------------+
    
 ## Setup
