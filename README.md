@@ -175,8 +175,5 @@ No projeto, utilizamos o makefile para "dar apelidos curtos" para os comandos no
  ```
 
 Se aparecer a versão, o make já está disponível. Assim pode-se utilizar os comandos make apresentados o makefile do projeto.
-Caso não aparecer, podemos instalar o make a partir do seguinte comando.
+Caso não aparecer, precisa ser instalado. Existem várias formas na internet para instalar o makefile, mas, como não é importante para a execução do projeto, essa parte fica a critério do leitor. Podemos copiar diretamente os comandos completos do makefile e jogar no terminal, funcionando da mesma forma como se fosse pelo make.
 
- ```powershell
-   choco install make
- ```
