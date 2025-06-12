@@ -1,9 +1,14 @@
 from json import loads
 from kafka import KafkaConsumer
-from psycopg2 import connect, extras
+from psycopg2 import connect
 from datetime import datetime
 import logging
 import os
+import sys
+
+# Importa módulo Redis auxiliar
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from utils import redis_helper
 
 KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'kafka:9092')
 TOPIC_NAME = 'iot-sensor-data'
@@ -13,7 +18,7 @@ DB_CONFIG = {
     'dbname': os.getenv('POSTGRES_DB', 'iotdata'),
     'user': os.getenv('POSTGRES_USER', 'iotuser'),
     'password': os.getenv('POSTGRES_PASSWORD', 'iotpassword'),
-    'host': os.getenv('POSTGRES_HOST', 'postgres'),  # <- deve ser 'postgres'
+    'host': os.getenv('POSTGRES_HOST', 'postgres'),
     'port': '5432'
 }
 
@@ -51,11 +56,9 @@ def create_database_schema(conn):
                 FOREIGN KEY (sensor_id) REFERENCES sensors (sensor_id)
             )
         """)
-        
         # Índices para melhorar performance de consultas
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_sensor_readings_sensor_id ON sensor_readings(sensor_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_sensor_readings_timestamp ON sensor_readings(timestamp)")
-        
         conn.commit()
     logger.info("Schema do banco de dados verificado/criado")
 
@@ -71,7 +74,6 @@ def update_or_insert_sensor(conn, sensor_data):
                 status = EXCLUDED.status,
                 battery_level = EXCLUDED.battery_level,
                 last_seen = EXCLUDED.last_seen
-            RETURNING id
         """, (
             sensor_data['sensor_id'],
             sensor_data['sensor_type'],
@@ -82,14 +84,13 @@ def update_or_insert_sensor(conn, sensor_data):
             timestamp,
             timestamp
         ))
-        
         conn.commit()
 
 def insert_sensor_reading(conn, sensor_data):
     """Insere uma nova leitura do sensor na tabela sensor_readings"""
     with conn.cursor() as cursor:
         timestamp = datetime.fromisoformat(sensor_data['timestamp'])
-        
+
         cursor.execute("""
             INSERT INTO sensor_readings (sensor_id, timestamp, value, unit)
             VALUES (%s, %s, %s, %s)
@@ -99,7 +100,6 @@ def insert_sensor_reading(conn, sensor_data):
             sensor_data['value'],
             sensor_data['unit']
         ))
-        
         conn.commit()
 
 def create_kafka_consumer():
@@ -131,19 +131,30 @@ def main():
         return
     
     logger.info("Iniciando consumo de mensagens...")
-    
+
     try:
         for message in consumer:
             sensor_data = message.value
-            logger.info(f"Mensagem recebida: {sensor_data['sensor_id']} - {sensor_data['sensor_type']}")
-            
+            reading_id = sensor_data.get("unique_reading_id")
+            sensor_id = sensor_data.get("sensor_id")
+
+            if not reading_id or not sensor_id:
+                logger.warning("Mensagem inválida, ignorando.")
+                continue
+
+            if redis_helper.is_duplicate(reading_id):
+                logger.info(f"Mensagem duplicada ignorada: {reading_id}")
+                continue
+
+            logger.info(f"Mensagem recebida: {sensor_id} - {sensor_data['sensor_type']}")
+
             try:
-                # Atualiza/insere informações do sensor
                 update_or_insert_sensor(conn, sensor_data)
-                
-                # Insere a leitura do sensor
                 insert_sensor_reading(conn, sensor_data)
-                
+
+                redis_helper.mark_as_processed(reading_id)
+                redis_helper.cache_last_value(sensor_id, sensor_data)
+
                 logger.info("Dados processados e armazenados com sucesso")
             except Exception as e:
                 logger.error(f"Erro ao processar mensagem: {e}")

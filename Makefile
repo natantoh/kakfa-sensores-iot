@@ -20,6 +20,22 @@ down:
 reset:
     docker-compose -f iot-kafka-monitoring/docker-compose.yml down -v
 
+#Logs individuais dos serviços
+log-kafka:
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml logs -f kafka
+
+log-postgres:
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml logs -f postgres
+
+log-producer:
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml logs -f producer
+
+log-consumer:
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml logs -f consumer
+
+log-redis:
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml logs -f redis
+
 # Mostra os logs de todos os serviços
 logs:
     docker-compose -f iot-kafka-monitoring/docker-compose.yml logs -f
