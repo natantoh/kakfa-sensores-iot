@@ -1,19 +1,38 @@
 from faker import Faker
 import random
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
+import os
 
 fake = Faker()
 
 SENSOR_TYPES = ['temperature', 'humidity', 'pressure', 'light', 'motion', 'co2']
 
+# Pool para IDs já gerados
+_id_pool = []
+_counter = 0
+
 def generate_sensor_data():
-    """Gera dados falsos de sensores IoT"""
+    """Gera dados falsos de sensores IoT, com opção de duplicar IDs para teste"""
+    global _id_pool, _counter
+    _counter += 1
+
     sensor_type = random.choice(SENSOR_TYPES)
 
+    # Ative duplicatas para teste via variável de ambiente
+    enable_duplicates = os.getenv('ENABLE_DUPLICATES', 'true').lower() == 'true'
+
+    if enable_duplicates and _counter % 4 == 0 and _id_pool:
+        # A cada 4 mensagens, repete um ID antigo
+        unique_reading_id = random.choice(_id_pool)
+    else:
+        unique_reading_id = str(fake.uuid4())
+        _id_pool.append(unique_reading_id)
+        if len(_id_pool) > 20:
+            _id_pool.pop(0)
+
     data = {
-        'unique_reading_id': fake.uuid4(),
-        'sensor_id': fake.uuid4(),
+        'unique_reading_id': unique_reading_id,
+        'sensor_id': str(fake.uuid4()),
         'sensor_type': sensor_type,
         'location': {
             'latitude': float(fake.latitude()),
@@ -62,4 +81,6 @@ def main():
     print(f"Dados do sensor: {data}")
 
 if __name__ == "__main__":
-    main()
+    for _ in range(20):
+        data = generate_sensor_data()
+        print(f"Dados do sensor: {data}")

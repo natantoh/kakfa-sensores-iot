@@ -32,7 +32,7 @@ def main():
             count += 1
             print(f"Enviando dados #{count}: {sensor_data}")
             producer.send(TOPIC_NAME, value=sensor_data)
-            sleep(random.uniform(0.5, 2))
+            sleep(random.uniform(0.5, 2)) # Entre 0.5 e 2 segundos entre envios
     except KeyboardInterrupt:
         print(f"Total de mensagens enviadas: {count}")
         print("Parando o producer...")

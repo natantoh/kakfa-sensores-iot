@@ -6,7 +6,6 @@ import logging
 import os
 import sys
 
-# Importa módulo Redis auxiliar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils import redis_helper
 
@@ -29,76 +28,49 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def create_database_schema(conn):
-    """Cria as tabelas necessárias no banco de dados"""
+    """Cria a tabela única para eventos de sensores"""
     with conn.cursor() as cursor:
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS sensors (
+            CREATE TABLE IF NOT EXISTS sensor_events (
                 id SERIAL PRIMARY KEY,
+                unique_reading_id VARCHAR(36) NOT NULL UNIQUE,
                 sensor_id VARCHAR(36) NOT NULL,
                 sensor_type VARCHAR(20) NOT NULL,
                 latitude DECIMAL(10, 6),
                 longitude DECIMAL(10, 6),
-                status VARCHAR(10),
-                battery_level INTEGER,
-                first_seen TIMESTAMP,
-                last_seen TIMESTAMP,
-                UNIQUE(sensor_id)
-            )
-        """)
-        
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS sensor_readings (
-                id SERIAL PRIMARY KEY,
-                sensor_id VARCHAR(36) NOT NULL,
                 timestamp TIMESTAMP NOT NULL,
                 value DECIMAL(10, 2),
                 unit VARCHAR(10),
-                FOREIGN KEY (sensor_id) REFERENCES sensors (sensor_id)
+                status VARCHAR(10),
+                battery_level INTEGER
             )
         """)
-        # Índices para melhorar performance de consultas
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_sensor_readings_sensor_id ON sensor_readings(sensor_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_sensor_readings_timestamp ON sensor_readings(timestamp)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_sensor_events_sensor_id ON sensor_events(sensor_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_sensor_events_timestamp ON sensor_events(timestamp)")
         conn.commit()
     logger.info("Schema do banco de dados verificado/criado")
 
-def update_or_insert_sensor(conn, sensor_data):
-    """Atualiza ou insere informações do sensor na tabela sensors"""
+def insert_sensor_event(conn, sensor_data):
+    """Insere um evento completo do sensor na tabela sensor_events"""
     with conn.cursor() as cursor:
         timestamp = datetime.fromisoformat(sensor_data['timestamp'])
-        
         cursor.execute("""
-            INSERT INTO sensors (sensor_id, sensor_type, latitude, longitude, status, battery_level, first_seen, last_seen)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (sensor_id) DO UPDATE SET
-                status = EXCLUDED.status,
-                battery_level = EXCLUDED.battery_level,
-                last_seen = EXCLUDED.last_seen
+            INSERT INTO sensor_events (
+                unique_reading_id, sensor_id, sensor_type, latitude, longitude,
+                timestamp, value, unit, status, battery_level
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (unique_reading_id) DO NOTHING
         """, (
+            sensor_data['unique_reading_id'],
             sensor_data['sensor_id'],
             sensor_data['sensor_type'],
             sensor_data['location']['latitude'],
             sensor_data['location']['longitude'],
-            sensor_data['status'],
-            sensor_data['battery_level'],
-            timestamp,
-            timestamp
-        ))
-        conn.commit()
-
-def insert_sensor_reading(conn, sensor_data):
-    """Insere uma nova leitura do sensor na tabela sensor_readings"""
-    with conn.cursor() as cursor:
-        timestamp = datetime.fromisoformat(sensor_data['timestamp'])
-
-        cursor.execute("""
-            INSERT INTO sensor_readings (sensor_id, timestamp, value, unit)
-            VALUES (%s, %s, %s, %s)
-        """, (
-            sensor_data['sensor_id'],
             timestamp,
             sensor_data['value'],
-            sensor_data['unit']
+            sensor_data['unit'],
+            sensor_data['status'],
+            sensor_data['battery_level']
         ))
         conn.commit()
 
@@ -114,22 +86,20 @@ def create_kafka_consumer():
     )
 
 def main():
-    # Conecta ao banco de dados
     try:
         conn = connect(**DB_CONFIG)
         create_database_schema(conn)
     except Exception as e:
         logger.error(f"Erro ao conectar ao banco de dados: {e}")
         return
-    
-    # Cria o consumidor Kafka
+
     try:
         consumer = create_kafka_consumer()
     except Exception as e:
         logger.error(f"Erro ao criar consumidor Kafka: {e}")
         conn.close()
         return
-    
+
     logger.info("Iniciando consumo de mensagens...")
 
     try:
@@ -149,17 +119,14 @@ def main():
             logger.info(f"Mensagem recebida: {sensor_id} - {sensor_data['sensor_type']}")
 
             try:
-                update_or_insert_sensor(conn, sensor_data)
-                insert_sensor_reading(conn, sensor_data)
-
+                insert_sensor_event(conn, sensor_data)
                 redis_helper.mark_as_processed(reading_id)
                 redis_helper.cache_last_value(sensor_id, sensor_data)
-
                 logger.info("Dados processados e armazenados com sucesso")
             except Exception as e:
                 logger.error(f"Erro ao processar mensagem: {e}")
                 conn.rollback()
-                
+
     except KeyboardInterrupt:
         logger.info("Parando o consumer...")
     finally:
