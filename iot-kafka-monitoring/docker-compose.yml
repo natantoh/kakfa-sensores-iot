@@ -1,65 +1,81 @@
-
-
-services:                      # Início da definição dos serviços que serão executados.
-
-  zookeeper:                   # Serviço chamado "zookeeper" (necessário para o Kafka funcionar).
-    image: confluentinc/cp-zookeeper:latest   # Usa a imagem oficial do Zookeeper da Confluent.
-    environment:               # Variáveis de ambiente para configurar o Zookeeper.
-      ZOOKEEPER_CLIENT_PORT: 2181            # Porta padrão para clientes se conectarem ao Zookeeper.
-      ZOOKEEPER_TICK_TIME: 2000              # Intervalo de tempo básico do Zookeeper (em ms).
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - "2181:2181"            # Mapeia a porta 2181 do container para a porta 2181 do host.
+      - "2181:2181"
 
-  kafka:                       # Serviço chamado "kafka" (broker de mensagens).
-    image: confluentinc/cp-kafka:latest      # Usa a imagem oficial do Kafka da Confluent.
-    depends_on:                # Garante que o Zookeeper seja iniciado antes do Kafka.
+  kafka:
+    image: confluentinc/cp-kafka:7.4.4
+    depends_on:
       - zookeeper
-    environment:               # Variáveis de ambiente para configurar o Kafka.
-      KAFKA_BROKER_ID: 1                       # Identificador único do broker Kafka.
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181  # Endereço do Zookeeper para o Kafka se conectar.
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9093  # Endereço pelo qual o broker será acessível.
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1           # Fator de replicação dos tópicos internos (1 para ambiente de teste).
-    ports:
-      - "9093:9093"            # Mapeia a porta 9093 do container para a porta 9093 do host.
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
 
-  postgres:                    # Serviço chamado "postgres" (banco de dados relacional).
-    image: postgres:13         # Usa a imagem oficial do PostgreSQL na versão 13.
-    environment:               # Variáveis de ambiente para configurar o banco.
-      POSTGRES_USER: iotuser               # Usuário padrão criado no banco.
-      POSTGRES_PASSWORD: iotpassword       # Senha do usuário padrão.
-      POSTGRES_DB: iotdata                 # Nome do banco de dados padrão criado.
     ports:
-      - "5432:5432"            # Mapeia a porta 5432 do container para a porta 5432 do host.
+      - "9093:9092"  # Mapeia 9092 (interno) para 9093 (host)
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: iotuser
+      POSTGRES_PASSWORD: iotpassword
+      POSTGRES_DB: iotdata
+    ports:
+      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data   # Volume persistente para armazenar os dados do banco.
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U iotuser -d iotdata"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-  producer:                    # Serviço para o producer Python
+  producer:
     build:
-      context: ./producer
+      context: .
+      dockerfile: producer/Dockerfile
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     environment:
-      - KAFKA_BROKER=kafka:9093
-      - TOPIC_NAME=iot-sensor-data
+      KAFKA_BROKER: "kafka:9092"  # Usa a porta interna do Kafka
+      TOPIC_NAME: "iot-sensor-data"
     restart: unless-stopped
 
-  consumer:                    # Serviço para o consumer Python
+  consumer:
     build:
-      context: ./consumer
+      context: .
+      dockerfile: consumer/Dockerfile
     depends_on:
-      - kafka
-      - postgres
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     environment:
-      - KAFKA_BROKER=kafka:9093
-      - TOPIC_NAME=iot-sensor-data
-      - POSTGRES_DB=iotdata
-      - POSTGRES_USER=iotuser
-      - POSTGRES_PASSWORD=iotpassword
-      - POSTGRES_HOST=postgres
+      KAFKA_BROKER: "kafka:9092"  # Usa a porta interna do Kafka
+      TOPIC_NAME: "iot-sensor-data"
+      POSTGRES_HOST: "postgres"
+      POSTGRES_DB: "iotdata"
+      POSTGRES_USER: "iotuser"
+      POSTGRES_PASSWORD: "iotpassword"
     restart: unless-stopped
+    # Remove o entrypoint com netcat (substituído pelo healthcheck do Kafka)
 
-volumes:                       # Definição dos volumes persistentes.
-  postgres_data:               # Volume chamado "postgres_data" para persistir dados do PostgreSQL.
+volumes:
+  postgres_data:
 
   # Comandos para rodar:
   # Para rodar tudo, basta usar o comando abaixo no terminal, dentro da pasta onde está o arquivo docker-compose.yml:
@@ -76,3 +92,7 @@ volumes:                       # Definição dos volumes persistentes.
 
   # Para parar tudo depois, use:
   # docker-compose down
+
+  # Depois de qualquer ajuste:
+  # docker-compose down -v
+  # docker-compose up --build

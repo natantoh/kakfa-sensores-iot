@@ -12,6 +12,7 @@ def generate_sensor_data():
     sensor_type = random.choice(SENSOR_TYPES)
 
     data = {
+        'unique_reading_id': fake.uuid4(),
         'sensor_id': fake.uuid4(),
         'sensor_type': sensor_type,
         'location': {
