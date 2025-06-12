@@ -1,7 +1,46 @@
 # kakfa-sensores-iot
 # IoT Sensor Monitoring with Kafka and PostgreSQL
+## Estrutura do Projeto
 
-This project demonstrates a system for monitoring IoT sensors using Kafka as a message broker and PostgreSQL for data storage.
+```
+kakfa-sensores-iot/
+│
+├── iot-kafka-monitoring/
+│   ├── docker-compose.yml
+│   ├── requirements.txt
+│   │
+│   ├── config/
+│   │   └── settings.py
+│   │
+│   ├── consumer/
+│   │   ├── consumer.py
+│   │   └── Dockerfile
+│   │
+│   ├── db/
+│   │
+│   ├── producer/
+│   │   ├── producer.py
+│   │   └── Dockerfile
+│   │
+│   └── utils/
+│       └── fake_data_sensor.py
+│
+├── .gitignore
+├── LICENSE
+└── README.md
+```
+## Descrição
+
+- **docker-compose.yml**: Orquestra todos os serviços (Kafka, Zookeeper, PostgreSQL, Producer, Consumer).
+- **requirements.txt**: Dependências Python compartilhadas por Producer e Consumer.
+- **config/**: Configurações auxiliares do projeto.
+- **consumer/**: Código e Dockerfile do consumidor Kafka (salva dados no PostgreSQL).
+- **producer/**: Código e Dockerfile do produtor Kafka (gera dados fake de sensores).
+- **db/**: (Opcional) Scripts ou arquivos relacionados ao banco de dados.
+- **utils/**: Utilitários, como gerador de dados fake para sensores.
+- **.gitignore**: Arquivos e pastas ignorados pelo Git.
+- **LICENSE**: Licença do projeto.
+- **README.md**: Documentação do projeto.
 
 ## Arquitetura
 
@@ -66,3 +105,27 @@ ADICIONAR:
 - MONITORAMENTO
 - QT DE MSG PROCESSADA
 - TRATAMENTO DE MSG
+
+## Realizando a configuração local - Para teste sem o docker
+- Baixar e instalar o PostgreSQL https://www.postgresql.org/download/windows/
+- Configurar com a porta 5432 ( Padrão )
+- Ir na pesquisa do windows digitar psql
+  No terminal **psql**, quando ele pedir as informações, preencher:
+
+  - **Server/host:**   localhost
+  - **Database:**  iotdata
+  - **Port:**  5432
+  - **Username:**  iotuser
+  - **Password:**  iotpassword
+
+Esses dados são os mesmos que você configuramos no arquivo consumer.py. Depois de preencher, você estará conectado ao seu banco PostgreSQL local e poderá executar comandos SQL normalmente!
+
+## DockerFile de consumer e producer
+Foi mantido uma imagem separada para o consumer e uma para o producer, visando os seguintes benefícios futuros:
+
+- **Responsabilidade única:** Cada serviço tem sua função bem definida e pode evoluir de forma independente.
+- **Escalabilidade:** Podemos escalar o producer ou o consumer separadamente, conforme a demanda.
+- **Deploy independente:** Atualizações em um serviço não afetam o outro.
+- **Boas práticas DevOps:** Facilita CI/CD, troubleshooting e manutenção.
+- **Flexibilidade:** Permite usar dependências, variáveis de ambiente e configurações específicas para cada serviço. 
+

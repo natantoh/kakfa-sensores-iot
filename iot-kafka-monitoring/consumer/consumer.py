@@ -1,22 +1,34 @@
-# consumer_iot.py
 from json import loads
 from kafka import KafkaConsumer
 from psycopg2 import connect, extras
 from datetime import datetime
 import logging
+import os
 
 # Configurações
-KAFKA_BROKER = 'localhost:9092'
+#KAFKA_BROKER = 'localhost:9093'  # Para rodar fora do Docker
+KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'kafka:9092')
 TOPIC_NAME = 'iot-sensor-data'
 GROUP_ID = 'iot-consumer-group'
 
 # Configuração do banco de dados PostgreSQL
+# DB_CONFIG = {
+#     'dbname': 'iotdata',
+#     'user': 'iotuser',
+#     'password': 'iotpassword',
+#     'host': 'localhost',
+#     'port': '5432'  # Descomentar se quiser rodar sem docker
+# }
+
+
 DB_CONFIG = {
-    'dbname': 'iotdata',
-    'user': 'iotuser',
-    'password': 'iotpassword',
-    'host': 'localhost'
+    'dbname': os.getenv('POSTGRES_DB', 'iotdata'),
+    'user': os.getenv('POSTGRES_USER', 'iotuser'),
+    'password': os.getenv('POSTGRES_PASSWORD', 'iotpassword'),
+    'host': os.getenv('POSTGRES_HOST', 'postgres'),  # <- deve ser 'postgres'
+    'port': '5432'
 }
+
 
 # Configuração do logging
 logging.basicConfig(
