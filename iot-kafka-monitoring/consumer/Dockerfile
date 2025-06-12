@@ -11,9 +11,10 @@ RUN apt-get update && \
 COPY requirements.txt .
 COPY utils ./utils
 COPY config ./config
-COPY consumer/consumer.py .
+
+COPY consumer ./consumer
 
 # Instala dependências Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "consumer.py"]
+CMD ["python", "-m", "consumer.consumer"]
