@@ -18,14 +18,20 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
-
     ports:
-      - "9093:9092"  # Mapeia 9092 (interno) para 9093 (host)
+      - "9093:9092"
     healthcheck:
       test: ["CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list || exit 1"]
       interval: 5s
       timeout: 10s
       retries: 10
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
 
   postgres:
     image: postgres:13
@@ -51,7 +57,8 @@ services:
       kafka:
         condition: service_healthy
     environment:
-      KAFKA_BROKER: "kafka:9092"  # Usa a porta interna do Kafka
+      ENV: "dev"
+      KAFKA_BROKER: "kafka:9092"
       TOPIC_NAME: "iot-sensor-data"
     restart: unless-stopped
 
@@ -65,14 +72,14 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      KAFKA_BROKER: "kafka:9092"  # Usa a porta interna do Kafka
+      ENV: "dev"
+      KAFKA_BROKER: "kafka:9092"
       TOPIC_NAME: "iot-sensor-data"
       POSTGRES_HOST: "postgres"
       POSTGRES_DB: "iotdata"
       POSTGRES_USER: "iotuser"
       POSTGRES_PASSWORD: "iotpassword"
     restart: unless-stopped
-    # Remove o entrypoint com netcat (substituído pelo healthcheck do Kafka)
 
 volumes:
   postgres_data:

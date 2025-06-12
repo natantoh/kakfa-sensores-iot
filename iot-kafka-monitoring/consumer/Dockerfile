@@ -10,9 +10,11 @@ RUN apt-get update && \
 # Copia requirements.txt e utils da pasta pai (contexto definido no compose)
 COPY requirements.txt .
 COPY utils ./utils
-COPY consumer/consumer.py .
+COPY config ./config
+
+COPY consumer ./consumer
 
 # Instala dependências Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "consumer.py"]
+CMD ["python", "-m", "consumer.consumer"]

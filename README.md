@@ -48,9 +48,60 @@ kakfa-sensores-iot/
 2. **Kafka**: Message broker for real-time data streaming
 3. **Consumer**: Processes messages from Kafka and stores in PostgreSQL
 4. **PostgreSQL**: Database for persistent storage of sensor data
+5.  **Redis**: O redis é usado em paralelo ao banco, após o processamento, para marcar leituras como já processadas e armazenar o último valor de cada sensor. PostgreSQL continua sendo o sistema de armazenamento histórico oficial.
 
-      [Producer] --> [Tópico Kafka] --> [Consumer] --> [Banco de Dados]
+      [Producer] --> [Kafka Topic] --> [Consumer] --> [Redis (cache + deduplicação)] + [PostgreSQL (persistência)]
 
+                        +-------------------+
+                        |   Sensor (fake)   |
+                        |   Producer.py     |
+                        |-------------------|
+                        | Faker gera dados  |
+                        | UUID, tipo, valor |
+                        +---------+---------+
+                                  |
+                         Kafka Producer envia JSON
+                                  |
+                                  v
+                         +--------+--------+
+                         |     Apache Kafka |
+                         |   (Broker + Topic)  |
+                         | Topic: iot-sensor-data |
+                         +--------+--------+
+                                  |
+                +----------------+------------------+
+                |                                   |
+                v                                   v
+      +---------+---------+              (outros consumers, se quiser)
+      |     Consumer.py    |
+      |--------------------|
+      | KafkaConsumer escuta |
+      | o tópico Kafka       |
+      +---------+-----------+
+                |
+                | Verifica se o `unique_reading_id`
+                | já foi processado em Redis:
+                |  → Se sim: ignora (deduplicação)
+                |  → Se não:
+                |      - processa
+                |      - salva no banco
+                |      - cacheia último valor
+                v
+        +--------------------+
+        |       Redis        |
+        |--------------------|
+        | reading:<uuid>     |  ← deduplicação com TTL
+        | last:<sensor_id>   |  ← cache do último valor
+        +--------------------+
+
+                |
+                v
+        +------------------------+
+        |     PostgreSQL         |
+        |------------------------|
+        | Table: sensor_events   |
+        +------------------------+
+   
 ## Setup
 
 1. Install Docker and Docker Compose
@@ -105,20 +156,7 @@ ADICIONAR:
 - MONITORAMENTO
 - QT DE MSG PROCESSADA
 - TRATAMENTO DE MSG
-
-## Realizando a configuração local - Para teste sem o docker
-- Baixar e instalar o PostgreSQL https://www.postgresql.org/download/windows/
-- Configurar com a porta 5432 ( Padrão )
-- Ir na pesquisa do windows digitar psql
-  No terminal **psql**, quando ele pedir as informações, preencher:
-
-  - **Server/host:**   localhost
-  - **Database:**  iotdata
-  - **Port:**  5432
-  - **Username:**  iotuser
-  - **Password:**  iotpassword
-
-Esses dados são os mesmos que você configuramos no arquivo consumer.py. Depois de preencher, você estará conectado ao seu banco PostgreSQL local e poderá executar comandos SQL normalmente!
+- TESTE COMO PRIORIDADE
 
 ## DockerFile de consumer e producer
 Foi mantido uma imagem separada para o consumer e uma para o producer, visando os seguintes benefícios futuros:
@@ -128,4 +166,14 @@ Foi mantido uma imagem separada para o consumer e uma para o producer, visando o
 - **Deploy independente:** Atualizações em um serviço não afetam o outro.
 - **Boas práticas DevOps:** Facilita CI/CD, troubleshooting e manutenção.
 - **Flexibilidade:** Permite usar dependências, variáveis de ambiente e configurações específicas para cada serviço. 
+
+## Makefile
+No projeto, utilizamos o makefile para "dar apelidos curtos" para os comandos normalmente usados. Na pasta raíz do projeto, podemos encontrar o arquivo makefile que contém comandos normalmente utilizados neste projeto. Para utilização do makefile, primeiro precisa verificar se o mesmo está instalado, para isso podemos verificar digitando:
+
+ ```bash
+   make --version
+ ```
+
+Se aparecer a versão, o make já está disponível. Assim pode-se utilizar os comandos make apresentados o makefile do projeto.
+Caso não aparecer, precisa ser instalado. Existem várias formas na internet para instalar o makefile, mas, como não é importante para a execução do projeto, essa parte fica a critério do leitor. Podemos copiar diretamente os comandos completos do makefile e jogar no terminal, funcionando da mesma forma como se fosse pelo make.
 
