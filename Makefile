@@ -88,4 +88,4 @@ status:
 prune:
     docker system prune -f
 
-.PHONY: up down reset logs logs-consumer logs-producer psql list-tables sql restart-consumer restart-producer
+.PHONY: up down reset logs logs-consumer logs-producer psql list-tables sql restart-consumer restart-
