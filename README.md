@@ -48,9 +48,61 @@ kakfa-sensores-iot/
 2. **Kafka**: Message broker for real-time data streaming
 3. **Consumer**: Processes messages from Kafka and stores in PostgreSQL
 4. **PostgreSQL**: Database for persistent storage of sensor data
+5.  **Redis**: O redis é usado em paralelo ao banco, após o processamento, para marcar leituras como já processadas e armazenar o último valor de cada sensor. PostgreSQL continua sendo o sistema de armazenamento histórico oficial.
 
-      [Producer] --> [Tópico Kafka] --> [Consumer] --> [Banco de Dados]
+      [Producer] --> [Kafka Topic] --> [Consumer] --> [Redis (cache + deduplicação)] + [PostgreSQL (persistência)]
 
+                        +-------------------+
+                        |   Sensor (fake)   |
+                        |   Producer.py     |
+                        |-------------------|
+                        | Faker gera dados  |
+                        | UUID, tipo, valor |
+                        +---------+---------+
+                                  |
+                         Kafka Producer envia JSON
+                                  |
+                                  v
+                         +--------+--------+
+                         |     Apache Kafka |
+                         |   (Broker + Topic)  |
+                         | Topic: iot-sensor-data |
+                         +--------+--------+
+                                  |
+                +----------------+------------------+
+                |                                   |
+                v                                   v
+      +---------+---------+              (outros consumers, se quiser)
+      |     Consumer.py    |
+      |--------------------|
+      | KafkaConsumer escuta |
+      | o tópico Kafka       |
+      +---------+-----------+
+                |
+                | Verifica se o `unique_reading_id`
+                | já foi processado em Redis:
+                |  → Se sim: ignora (deduplicação)
+                |  → Se não:
+                |      - processa
+                |      - salva no banco
+                |      - cacheia último valor
+                v
+        +--------------------+
+        |       Redis        |
+        |--------------------|
+        | reading:<uuid>     |  ← deduplicação com TTL
+        | last:<sensor_id>   |  ← cache do último valor
+        +--------------------+
+
+                |
+                v
+        +------------------------+
+        |     PostgreSQL         |
+        |------------------------|
+        | Table: sensors         |
+        | Table: sensor_readings |
+        +------------------------+
+   
 ## Setup
 
 1. Install Docker and Docker Compose
