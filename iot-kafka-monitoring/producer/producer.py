@@ -6,9 +6,10 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.fake_data_sensor import generate_sensor_data
+from config.settings import settings  # Importa as configurações centralizadas
 
-KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'kafka:9092')
-TOPIC_NAME = 'iot-sensor-data'
+KAFKA_BROKER = settings.KAFKA_BROKER
+TOPIC_NAME = settings.TOPIC_NAME
 
 def create_kafka_producer():
     """Cria e retorna um produtor Kafka"""

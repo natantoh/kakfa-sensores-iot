@@ -6,20 +6,15 @@ import logging
 import os
 import sys
 
+# Adiciona o diretório raiz ao sys.path para facilitar imports de config e utils
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils import redis_helper
+from config.settings import settings  # Importa as configurações centralizadas
 
-KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'kafka:9092')
-TOPIC_NAME = 'iot-sensor-data'
-GROUP_ID = 'iot-consumer-group'
-
-DB_CONFIG = {
-    'dbname': os.getenv('POSTGRES_DB', 'iotdata'),
-    'user': os.getenv('POSTGRES_USER', 'iotuser'),
-    'password': os.getenv('POSTGRES_PASSWORD', 'iotpassword'),
-    'host': os.getenv('POSTGRES_HOST', 'postgres'),
-    'port': '5432'
-}
+KAFKA_BROKER = settings.KAFKA_BROKER
+TOPIC_NAME = settings.TOPIC_NAME
+GROUP_ID = settings.GROUP_ID
+DB_CONFIG = settings.DB_CONFIG
 
 logging.basicConfig(
     level=logging.INFO,
