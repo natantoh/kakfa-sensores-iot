@@ -2,3 +2,4 @@ kafka-python==2.0.2   # Biblioteca cliente para conectar, produzir e consumir me
 faker==24.3.0         # Gera dados falsos e aleatórios (nomes, datas, números, etc.), útil para simular sensores IoT.
 sqlalchemy==2.0.30    # ORM (Object Relational Mapper) para Python, facilita a interação e manipulação de bancos de dados relacionais como o PostgreSQL.
 psycopg2-binary==2.9.10
+redis==6.2.0
