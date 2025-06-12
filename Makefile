@@ -1,5 +1,13 @@
 # Makefile para facilitar comandos do projeto IoT Kafka Monitoring
 
+# Equivalente a ir em iot-kafka-monitoring e docker-compose down -v
+down-all:
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml down -v
+
+# Sobe todos os containers e reconstrói as imagens, mostrando os logs no terminal
+up-all:
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml up --build
+
 # Sobe todos os containers em modo detach (background)
 up:
     docker-compose -f iot-kafka-monitoring/docker-compose.yml up --build -d
@@ -24,7 +32,7 @@ logs-consumer:
 logs-producer:
     docker-compose -f iot-kafka-monitoring/docker-compose.yml logs -f producer
 
-# Entra no shell do banco de dados PostgreSQL
+# Entra no shell do banco de dados PostgreSQL, no terminal interativo, \dt lista as tabelas, e comandos SQL podem ser executados com final, ex: select * from sensors;
 psql:
     docker-compose -f iot-kafka-monitoring/docker-compose.yml exec postgres psql -U iotuser -d iotdata
 
