@@ -1,4 +1,3 @@
-# Producer de dados de sensores IoT para Kafka
 from time import sleep
 from json import dumps
 from kafka import KafkaProducer
@@ -8,10 +7,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.fake_data_sensor import generate_sensor_data
 
-# Configurações
-#KAFKA_BROKER = 'localhost:9093' # Para rodar fora do Docker
-KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'kafka:9092')  # Para rodar com Docker, # Docker Compose usa 9092 internamente
-#KAFKA_BROKER = 'kafka:9092'    # Para rodar com Docker
+KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'kafka:9092')
 TOPIC_NAME = 'iot-sensor-data'
 
 def create_kafka_producer():
@@ -32,7 +28,7 @@ def main():
             count += 1
             print(f"Enviando dados #{count}: {sensor_data}")
             producer.send(TOPIC_NAME, value=sensor_data)
-            sleep(random.uniform(0.5, 2))
+            sleep(random.uniform(0.5, 2)) # Entre 0.5 e 2 segundos entre envios
     except KeyboardInterrupt:
         print(f"Total de mensagens enviadas: {count}")
         print("Parando o producer...")

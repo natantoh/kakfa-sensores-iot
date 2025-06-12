@@ -1,7 +1,7 @@
 # Makefile para facilitar comandos do projeto IoT Kafka Monitoring
 
-# Equivalente a ir em iot-kafka-monitoring e docker-compose down -v
-down-all:
+# Equivalente a ir em iot-kafka-monitoring e docker-compose down -v. Remove containers e volumes (apaga dados do banco)
+down-all-reset:
     docker-compose -f iot-kafka-monitoring/docker-compose.yml down -v
 
 # Sobe todos os containers e reconstrói as imagens, mostrando os logs no terminal
@@ -16,9 +16,21 @@ up:
 down:
     docker-compose -f iot-kafka-monitoring/docker-compose.yml down
 
-# Para, remove containers e volumes (apaga dados do banco)
-reset:
-    docker-compose -f iot-kafka-monitoring/docker-compose.yml down -v
+#Logs individuais dos serviços
+log-kafka:
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml logs -f kafka
+
+log-postgres:
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml logs -f postgres
+
+log-producer:
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml logs -f producer
+
+log-consumer:
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml logs -f consumer
+
+log-redis:
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml logs -f redis
 
 # Mostra os logs de todos os serviços
 logs:
@@ -43,6 +55,12 @@ list-tables:
 # Executa um comando SQL no banco (exemplo: make sql CMD="SELECT * FROM sensors;")
 sql:
     docker-compose -f iot-kafka-monitoring/docker-compose.yml exec postgres psql -U iotuser -d iotdata -c "$(CMD)"
+
+select_from:
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml exec postgres psql -U iotuser -d iotdata -c "SELECT * FROM sensor_events;"
+
+check-duplicates:
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml exec postgres psql -U iotuser -d iotdata -c "SELECT unique_reading_id, COUNT(*) FROM sensor_events GROUP BY unique_reading_id HAVING COUNT(*) > 1;"
 
 # Reinicia apenas o consumer
 restart-consumer:
