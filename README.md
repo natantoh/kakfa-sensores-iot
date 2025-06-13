@@ -192,3 +192,6 @@ test_sensor_event_repository
 ```bash
    pytest -vv iot-kafka-monitoring/tests/test_sensor_event_repository.py
 ```
+
+### Execução dos testes 
+![image](https://github.com/user-attachments/assets/e9f0c73d-c84c-4f44-a39f-5c143cac5998)
