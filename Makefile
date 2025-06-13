@@ -14,7 +14,7 @@ up:
 
 # Sobe somente o redis
 up-redis:
-    docker-compose -f iot-kafka-monitoring/docker-compose.yml up redis
+	docker-compose -f iot-kafka-monitoring/docker-compose.yml up redis
 
 # Sobe todos os container,exceto o producer
 up-all-no-producer:
@@ -124,4 +124,4 @@ test-sensor-event-processor:
 test-sensor-event-repository:
 	pytest -vv iot-kafka-monitoring/tests/test_sensor_event_repository.py
 
-.PHONY: up down reset logs logs-consumer logs-producer psql list-tables sql restart-consumer restart-
+.PHONY: down-all-reset up-all up up-redis up-all-no-producer down log-kafka log-zookeeper log-postgres log-producer log-consumer log-redis logs logs-consumer logs-producer psql list-tables sql select_from check-duplicates restart-consumer restart-producer status prune prune_cache prune_imagens install-require install-test-require test-redis-helper test-sensor-event-processor test-sensor-event-repository
