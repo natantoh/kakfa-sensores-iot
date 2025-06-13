@@ -198,4 +198,9 @@ test_sensor_event_repository
 ```bash
    pytest --cov=iot-kafka-monitoring
 ```
+Cover:
 ![image](https://github.com/user-attachments/assets/e9f0c73d-c84c-4f44-a39f-5c143cac5998)
+
+Individual:
+![image](https://github.com/user-attachments/assets/6958e52d-5f3b-4dea-bccb-69cc8d27f25f)
+
