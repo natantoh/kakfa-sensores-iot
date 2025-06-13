@@ -174,3 +174,21 @@ No projeto, utilizamos o makefile para "dar apelidos curtos" para os comandos no
 Se aparecer a versão, o make já está disponível. Assim pode-se utilizar os comandos make apresentados o makefile do projeto.
 Caso não aparecer, precisa ser instalado. Existem várias formas na internet para instalar o makefile, mas, como não é importante para a execução do projeto, essa parte fica a critério do leitor. Podemos copiar diretamente os comandos completos do makefile e jogar no terminal, funcionando da mesma forma como se fosse pelo make.
 
+## TESTES
+   Os testes foram feito utilizando o framework pytest, para correta execução dos teste, recomenda-se a instalação dos requirements.txt do projeto e test_requirements.txt de teste.
+
+Para este teste, é necessário subir o container do redis, para isso, pode-se usar no terminal: docker-compose -f iot-kafka-monitoring/docker-compose.yml up redis
+test_redis_helper
+```bash
+   pytest -vv iot-kafka-monitoring/tests/test_redis_helper.py
+```
+
+test_sensor_event_processor
+```bash
+   pytest -vv iot-kafka-monitoring/tests/test_sensor_event_processor.py
+```
+
+test_sensor_event_repository
+```bash
+   pytest -vv iot-kafka-monitoring/tests/test_sensor_event_repository.py
+```
