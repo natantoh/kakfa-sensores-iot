@@ -1,5 +1,5 @@
 # kakfa-sensores-iot
-# IoT Sensor Monitoring with Kafka and PostgreSQL
+# Monitoramento de dispositivo IOT com Kafa, PostgreSQL e Redis
 ## Estrutura do Projeto
 
 ```
