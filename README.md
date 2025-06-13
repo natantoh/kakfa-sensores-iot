@@ -155,13 +155,6 @@
    ```
 Neste projeto, tem diversos comandos no makefile que podem ser usados no terminal para análise como um todo. Os comandos mais usados foram disponibilizados no makefile do projeto. 
 
-## ToDo
-ADICIONAR:
-- MONITORAMENTO
-- QT DE MSG PROCESSADA
-- TRATAMENTO DE MSG
-- TESTE COMO PRIORIDADE
-
 ## DockerFile de consumer e producer
 Foi mantido uma imagem separada para o consumer e uma para o producer, visando os seguintes benefícios futuros:
 
