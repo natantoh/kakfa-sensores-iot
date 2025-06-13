@@ -1,54 +1,82 @@
 # kakfa-sensores-iot
-# IoT Sensor Monitoring with Kafka and PostgreSQL
+# Monitoramento de dispositivo IOT com Kafa, PostgreSQL e Redis
 ## Estrutura do Projeto
 
 ```
-kakfa-sensores-iot/
-│
-├── iot-kafka-monitoring/
-│   ├── docker-compose.yml
-│   ├── requirements.txt
-│   │
-│   ├── config/
-│   │   └── settings.py
-│   │
-│   ├── consumer/
-│   │   ├── consumer.py
-│   │   └── Dockerfile
-│   │
-│   ├── db/
-│   │
-│   ├── producer/
-│   │   ├── producer.py
-│   │   └── Dockerfile
-│   │
-│   └── utils/
-│       └── fake_data_sensor.py
-│
+.
 ├── .gitignore
 ├── LICENSE
-└── README.md
+├── Makefile
+├── README.md
+└── iot-kafka-monitoring/
+    ├── docker-compose.yml
+    ├── requirements.txt
+    ├── test_requirements.txt
+    ├── config/
+    │   └── settings.py
+    ├── consumer/
+    │   ├── consumer.py
+    │   ├── Dockerfile
+    │   ├── kafka_consumer_manager.py
+    │   ├── sensor_event_processor.py
+    │   └── sensor_event_repository.py
+    ├── producer/
+    │   ├── Dockerfile
+    │   └── producer.py
+    ├── tests/
+    │   ├── __init__.py
+    │   ├── test_redis_helper.py
+    │   ├── test_sensor_event_processor.py
+    │   └── test_sensor_event_repository.py
+    └── utils/
+        ├── fake_data_sensor.py
+        └── redis_helper.py
 ```
-## Descrição
 
-- **docker-compose.yml**: Orquestra todos os serviços (Kafka, Zookeeper, PostgreSQL, Producer, Consumer).
-- **requirements.txt**: Dependências Python compartilhadas por Producer e Consumer.
-- **config/**: Configurações auxiliares do projeto.
-- **consumer/**: Código e Dockerfile do consumidor Kafka (salva dados no PostgreSQL).
-- **producer/**: Código e Dockerfile do produtor Kafka (gera dados fake de sensores).
-- **db/**: (Opcional) Scripts ou arquivos relacionados ao banco de dados.
-- **utils/**: Utilitários, como gerador de dados fake para sensores.
-- **.gitignore**: Arquivos e pastas ignorados pelo Git.
+### Descrição das Pastas e Arquivos
+
+- **.gitignore**: Arquivos e pastas a serem ignorados pelo Git.
 - **LICENSE**: Licença do projeto.
-- **README.md**: Documentação do projeto.
+- **Makefile**: Atalhos para comandos comuns do projeto (subir containers, rodar testes, etc).
+- **README.md**: Documentação principal do projeto.
+
+#### iot-kafka-monitoring/
+- **docker-compose.yml**: Orquestra todos os serviços (Kafka, Zookeeper, PostgreSQL, Redis, Producer, Consumer).
+- **requirements.txt**: Dependências Python do projeto.
+- **test_requirements.txt**: Dependências para rodar os testes automatizados.
+
+##### config/
+- **settings.py**: Centraliza as configurações do projeto (Kafka, PostgreSQL, Redis, etc).
+
+##### consumer/
+- **consumer.py**: Script principal do consumidor Kafka (processa e armazena eventos).
+- **Dockerfile**: Dockerfile para buildar o container do consumer.
+- **kafka_consumer_manager.py**: Gerencia a conexão e consumo de mensagens do Kafka.
+- **sensor_event_processor.py**: Lógica de processamento dos eventos (deduplicação, persistência, cache).
+- **sensor_event_repository.py**: Interação com o banco de dados PostgreSQL.
+
+##### producer/
+- **producer.py**: Script principal do produtor Kafka (gera e envia dados fake de sensores).
+- **Dockerfile**: Dockerfile para buildar o container do producer.
+
+##### tests/
+- **__init__.py**: Torna a pasta um pacote Python.
+- **test_redis_helper.py**: Testes para utilitários de Redis.
+- **test_sensor_event_processor.py**: Testes para o processamento de eventos do sensor.
+- **test_sensor_event_repository.py**: Testes para o repositório de eventos do sensor.
+
+##### utils/
+- **fake_data_sensor.py**: Geração de dados fake de sensores IoT.
+- **redis_helper.py**: Utilitário para operações de cache e deduplicação no Redis.
+
 
 ## Arquitetura
 
 1. **Producer**: Gera dados falsos do sensor e envia para o tópico Kafka. 
-2. **Kafka**: Message broker for real-time data streaming
-3. **Consumer**: Processes messages from Kafka and stores in PostgreSQL
-4. **PostgreSQL**: Database for persistent storage of sensor data
-5.  **Redis**: O redis é usado em paralelo ao banco, após o processamento, para marcar leituras como já processadas e armazenar o último valor de cada sensor. PostgreSQL continua sendo o sistema de armazenamento histórico oficial.
+2. **Kafka**: Recebe as mensagens do producer e as disponibiliza imediatamente para consumo contínuo (streaming), permitindo processamento quase em tempo real pelo consumer.
+3. **Consumer**: Consome as mensagens do tópico Kafka, processa cada evento, faz deduplicação e persistência.
+4.  **Redis**: É usado em paralelo ao banco, após o processamento, para marcar leituras como já processadas e armazenar o último valor de cada sensor. PostgreSQL continua sendo o sistema de armazenamento histórico oficial.
+5. **PostgreSQL**: Armazena historicamente todos os eventos de sensores processados.
 
       [Producer] --> [Kafka Topic] --> [Consumer] --> [Redis (cache + deduplicação)] + [PostgreSQL (persistência)]
 
@@ -63,11 +91,11 @@ kakfa-sensores-iot/
                          Kafka Producer envia JSON
                                   |
                                   v
-                         +--------+--------+
-                         |     Apache Kafka |
-                         |   (Broker + Topic)  |
+                         +--------+---------------+
+                         |     Apache Kafka       |
+                         |   (Broker + Topic)     |
                          | Topic: iot-sensor-data |
-                         +--------+--------+
+                         +--------+---------------+
                                   |
                 +----------------+------------------+
                 |                                   |
@@ -102,61 +130,30 @@ kakfa-sensores-iot/
         | Table: sensor_events   |
         +------------------------+
    
-## Setup
+## Rodando o sistema
+  Para rodar o sistema no windows, é necessário ter o docker instalado ( No meu caso instalei o docker desktop, onde pode-se acompanhar visualmente os containers que sobem entre outros gerenciamentos do docker )
 
-1. Install Docker and Docker Compose
-2. Clone this repository
-3. Create `.env` file if needed (see `.env.example`)
-
-## Running the System
-
-1. Iniciar os containers:
+1. Iniciar todos os containers ( Na pasta raíz do projeto )
    ```bash
-   docker-compose up -d
+   docker-compose -f iot-kafka-monitoring/docker-compose.yml up --build
+   ```
+  O comando acima irá subir todos os containers e começar a rodar. 
+
+2. Lista a tabela criada:
+   ```bash
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml exec postgres psql -U iotuser -d iotdata -c "\dt"
    ```
 
-2. Create database tables (run once):
+3. Faz select na tabela:
    ```bash
-    python -c "from db.models import create_tables; create_tables()"
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml exec postgres psql -U iotuser -d iotdata -c "SELECT * FROM sensor_events;"
    ```
-3. Rodar o producer:
- ```bash
-    python producer/producer.py
- ```
-4. Rodar o onsumer:
- ```bash
-   python consumer/consumer.py
- ```
 
-## Access Services
-  Kafka UI: http://localhost:8080
-  PostgreSQL:
-  Host: localhost
-  Port: 5432
-  Database: iotdb
-  User: iotuser
-  Password: iotpassword
-
-## Como Usar o Sistema
-  1. Inicie todos os serviços com `docker-compose up -d`
-  2. Crie as tabelas no PostgreSQL executando o comando para criar tabelas
-  3. Execute o producer para começar a gerar dados
-  4. Execute o consumer para processar e armazenar os dados
-
-  O sistema irá:
-  - Gerar dados falsos de sensores IoT (temperatura, umidade, etc.)
-  - Enviar esses dados para um tópico Kafka
-  - Consumir os dados do Kafka
-  - Armazenar os dados no PostgreSQL
-
-Você pode monitorar os dados através do Kafka UI em http://localhost:8080 e consultar os dados armazenados no PostgreSQL.
-
-ADICIONAR:
-- REDIS
-- MONITORAMENTO
-- QT DE MSG PROCESSADA
-- TRATAMENTO DE MSG
-- TESTE COMO PRIORIDADE
+4. Check Duplicatas na tabela:
+   ```bash
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml exec postgres psql -U iotuser -d iotdata -c "SELECT unique_reading_id, COUNT(*) FROM sensor_events GROUP BY unique_reading_id HAVING COUNT(*) > 1;"
+   ```
+Neste projeto, tem diversos comandos no makefile que podem ser usados no terminal para análise como um todo. Os comandos mais usados foram disponibilizados no makefile do projeto. 
 
 ## DockerFile de consumer e producer
 Foi mantido uma imagem separada para o consumer e uma para o producer, visando os seguintes benefícios futuros:
@@ -177,3 +174,21 @@ No projeto, utilizamos o makefile para "dar apelidos curtos" para os comandos no
 Se aparecer a versão, o make já está disponível. Assim pode-se utilizar os comandos make apresentados o makefile do projeto.
 Caso não aparecer, precisa ser instalado. Existem várias formas na internet para instalar o makefile, mas, como não é importante para a execução do projeto, essa parte fica a critério do leitor. Podemos copiar diretamente os comandos completos do makefile e jogar no terminal, funcionando da mesma forma como se fosse pelo make.
 
+## TESTES
+   Os testes foram feito utilizando o framework pytest, para correta execução dos teste, recomenda-se a instalação dos requirements.txt do projeto e test_requirements.txt de teste.
+
+Para este teste, é necessário subir o container do redis, para isso, pode-se usar no terminal: docker-compose -f iot-kafka-monitoring/docker-compose.yml up redis
+test_redis_helper
+```bash
+   pytest -vv iot-kafka-monitoring/tests/test_redis_helper.py
+```
+
+test_sensor_event_processor
+```bash
+   pytest -vv iot-kafka-monitoring/tests/test_sensor_event_processor.py
+```
+
+test_sensor_event_repository
+```bash
+   pytest -vv iot-kafka-monitoring/tests/test_sensor_event_repository.py
+```
