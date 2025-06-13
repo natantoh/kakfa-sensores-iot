@@ -3,7 +3,6 @@
 ## Estrutura do Projeto
 
 ```
-```
 .
 ├── .gitignore
 ├── LICENSE
