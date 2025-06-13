@@ -11,7 +11,6 @@ RUN apt-get update && \
 COPY requirements.txt .
 COPY utils ./utils
 COPY config ./config
-
 COPY consumer ./consumer
 
 # Instala dependências Python

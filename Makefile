@@ -12,6 +12,14 @@ up-all:
 up:
 	docker-compose -f iot-kafka-monitoring/docker-compose.yml up --build -d
 
+# Sobe somente o redis
+up-redis:
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml up redis
+
+# Sobe todos os container,exceto o producer
+up-all-no-producer:
+	docker-compose -f iot-kafka-monitoring/docker-compose.yml up kafka zookeeper redis postgres consumer
+
 # Para e remove todos os containers, mas mantém os volumes (dados do banco)
 down:
 	docker-compose -f iot-kafka-monitoring/docker-compose.yml down
@@ -87,5 +95,33 @@ status:
 # Limpa imagens não utilizadas (opcional)
 prune:
 	docker system prune -f
+
+# Limpa o cache do docker, evita erros de cache
+prune_cache:
+	docker builder prune
+
+# Limpa imagens e containers antigos
+prune_imagens:
+	docker system prune -a
+
+# Install requirements.txt
+install-require:
+	pip install -r requirements.txt
+
+# Install test requirements.txt
+install-test-require:
+	pip install -r test_requirements.txt
+
+# Testar test_redis_helper
+test-redis-helper:
+	pytest -vv iot-kafka-monitoring/tests/test_redis_helper.py
+
+# Testar test_sensor_event_processor
+test-sensor-event-processor:
+	pytest -vv iot-kafka-monitoring/tests/test_sensor_event_processor.py
+
+# Testar test_sensor_event_repository
+test-sensor-event-repository:
+	pytest -vv iot-kafka-monitoring/tests/test_sensor_event_repository.py
 
 .PHONY: up down reset logs logs-consumer logs-producer psql list-tables sql restart-consumer restart-
