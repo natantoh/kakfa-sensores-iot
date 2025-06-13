@@ -74,7 +74,7 @@
 
 1. **Producer**: Gera dados falsos do sensor e envia para o tópico Kafka. 
 2. **Kafka**: Recebe as mensagens do producer e as disponibiliza imediatamente para consumo contínuo (streaming), permitindo processamento quase em tempo real pelo consumer.
-3. **Consumer**: consome as mensagens do tópico Kafka, processa cada evento, faz deduplicação e persistência.
+3. **Consumer**: Consome as mensagens do tópico Kafka, processa cada evento, faz deduplicação e persistência.
 4.  **Redis**: É usado em paralelo ao banco, após o processamento, para marcar leituras como já processadas e armazenar o último valor de cada sensor. PostgreSQL continua sendo o sistema de armazenamento histórico oficial.
 5. **PostgreSQL**: Armazena historicamente todos os eventos de sensores processados.
 
@@ -130,57 +130,33 @@
         | Table: sensor_events   |
         +------------------------+
    
-## Setup
+## Rodando o sistema
+  Para rodar o sistema no windows, é necessário ter o docker instalado ( No meu caso instalei o docker desktop, onde pode-se acompanhar visualmente os containers que sobem entre outros gerenciamentos do docker )
 
-1. Install Docker and Docker Compose
-2. Clone this repository
-3. Create `.env` file if needed (see `.env.example`)
-
-## Running the System
-
-1. Iniciar os containers:
+1. Iniciar todos os containers ( Na pasta raíz do projeto )
    ```bash
-   docker-compose up -d
+   docker-compose -f iot-kafka-monitoring/docker-compose.yml up --build
+   ```
+  O comando acima irá subir todos os containers e começar a rodar. 
+
+2. Lista a tabela criada:
+   ```bash
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml exec postgres psql -U iotuser -d iotdata -c "\dt"
    ```
 
-2. Create database tables (run once):
+3. Faz select na tabela:
    ```bash
-    python -c "from db.models import create_tables; create_tables()"
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml exec postgres psql -U iotuser -d iotdata -c "SELECT * FROM sensor_events;"
    ```
-3. Rodar o producer:
- ```bash
-    python producer/producer.py
- ```
-4. Rodar o onsumer:
- ```bash
-   python consumer/consumer.py
- ```
 
-## Access Services
-  Kafka UI: http://localhost:8080
-  PostgreSQL:
-  Host: localhost
-  Port: 5432
-  Database: iotdb
-  User: iotuser
-  Password: iotpassword
+4. Check Duplicatas na tabela:
+   ```bash
+    docker-compose -f iot-kafka-monitoring/docker-compose.yml exec postgres psql -U iotuser -d iotdata -c "SELECT unique_reading_id, COUNT(*) FROM sensor_events GROUP BY unique_reading_id HAVING COUNT(*) > 1;"
+   ```
+Neste projeto, tem diversos comandos no makefile que podem ser usados no terminal para análise como um todo. Os comandos mais usados foram disponibilizados no makefile do projeto. 
 
-## Como Usar o Sistema
-  1. Inicie todos os serviços com `docker-compose up -d`
-  2. Crie as tabelas no PostgreSQL executando o comando para criar tabelas
-  3. Execute o producer para começar a gerar dados
-  4. Execute o consumer para processar e armazenar os dados
-
-  O sistema irá:
-  - Gerar dados falsos de sensores IoT (temperatura, umidade, etc.)
-  - Enviar esses dados para um tópico Kafka
-  - Consumir os dados do Kafka
-  - Armazenar os dados no PostgreSQL
-
-Você pode monitorar os dados através do Kafka UI em http://localhost:8080 e consultar os dados armazenados no PostgreSQL.
-
+## ToDo
 ADICIONAR:
-- REDIS
 - MONITORAMENTO
 - QT DE MSG PROCESSADA
 - TRATAMENTO DE MSG
